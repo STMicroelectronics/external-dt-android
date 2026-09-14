@@ -198,6 +198,12 @@
 		status = "okay";
 	};
 
+	uio_fwu_shmem: uio-fwu-shmem@81300000 {
+		compatible = "uio-fwu-shmem";
+		reg = <0x0 0x81300000 0x0 0x00a00000>;
+		status = "okay";
+	};
+
 	wifi_pwrseq: wifi-pwrseq {
 		compatible = "mmc-pwrseq-simple";
 		reset-gpios = <&gpiog 8 GPIO_ACTIVE_LOW>;
@@ -222,7 +228,7 @@
 	status = "okay";
 };
 
-&iwdg1 {
+&arm_wdt {
 	timeout-sec = <32>;
 	status = "okay";
 };
@@ -352,16 +358,21 @@
 	status = "okay";
 };
 
-&hpdma {
-	memory-region = <&hpdma1_lli>;
-};
+/*
+ * cm33tdcid: SYSRAM is owned by the M33 (CID2/TDCID) and protected by RISAB1/2.
+ * The A35 (CID1) HPDMA cannot fetch its linked-list descriptors from SYSRAM
+ * (hpdma1_lli@a020000) without an IAC illegal-access reset (IDs 128/129) when
+ * audio DMA runs. With no memory-region the stm32-dma3 driver allocates the LLI
+ * pool from DDR (RISAF4 linuxkernel1, CID1-owned) instead. See stm32-dma3.c
+ * stm32_dma3_lli_pool_create(): no memory-region => fallback dma_pool in DDR.
+ */
 
 &hpdma2 {
 	memory-region = <&hpdma2_lli>;
 };
 
 &hpdma3 {
-	memory-region = <&hpdma3_lli>;
+	status = "disabled";
 };
 
 &i2c2 {
@@ -543,15 +554,11 @@
 	nvmem-cells = <&rsc_tbl_addr_m33td>, <&rsc_tbl_size_m33td>;
 	memory-region = <&ipc_shmem_1>, <&vdev0vring0>,
 			<&vdev0vring1>, <&vdev0buffer>;
-	keep-power-in-suspend;
 	st,auto-boot;
 	status = "okay";
 };
 
 &mdf1 {
-	clock-frequency = <1536000>;
-	clock-output-names = "cck0";
-	#clock-cells = <1>;
 	pinctrl-1 = <&mdf_cck0_sleep_pins_a>;
 	pinctrl-0 = <&mdf_cck0_pins_a>;
 	pinctrl-names = "default", "sleep";
@@ -618,7 +625,7 @@
 	};
 
 	sitf6: sitf@380 {
-		clocks = <&mdf1 0>;
+		clocks = <&rcc CK_KER_MDF1>;
 		st,sitf-mode = "spi";
 		pinctrl-1 = <&mdf_sdi6_sleep_pins_a>;
 		pinctrl-0 = <&mdf_sdi6_pins_a>;
@@ -652,6 +659,7 @@
 	mboxes = <&ipcc1 0x10f>;
 	mbox-names = "tx";
 	shmem = <&scmi_cid1_ns>;
+	max-rx-timeout-ms = <2000>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 };

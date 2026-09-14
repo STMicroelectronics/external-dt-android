@@ -173,6 +173,12 @@
 		status = "disabled";
 	};
 
+	uio_fwu_shmem: uio-fwu-shmem@81300000 {
+		compatible = "uio-fwu-shmem";
+		reg = <0x0 0x81300000 0x0 0x00a00000>;
+		status = "okay";
+	};
+
 	vdiv_ana0: voltage-divider-ana0 {
 		compatible = "voltage-divider";
 		io-channels = <&adc1 0>;
@@ -224,7 +230,7 @@
 	shmem = <&scmi_cid1_ns>;
 };
 
-&iwdg1 {
+&arm_wdt {
 	timeout-sec = <32>;
 	status = "okay";
 };
@@ -302,7 +308,7 @@
 &dsi {
 	vdd-supply =  <&scmi_vddcore>;
 	vdda18-supply = <&scmi_v1v8>;
-	status = "disabled";
+	status = "okay";
 
 	ports {
 		#address-cells = <1>;
@@ -380,16 +386,21 @@
 	status = "okay";
 };
 
-&hpdma {
-	memory-region = <&hpdma1_lli>;
-};
+/*
+ * cm33tdcid: SYSRAM is owned by the M33 (CID2/TDCID) and protected by RISAB1/2.
+ * The A35 (CID1) HPDMA cannot fetch its linked-list descriptors from SYSRAM
+ * (hpdma1_lli@a020000) without an IAC illegal-access reset (IDs 128/129) when
+ * audio DMA runs. With no memory-region the stm32-dma3 driver allocates the LLI
+ * pool from DDR (RISAF4 linuxkernel1, CID1-owned) instead. See stm32-dma3.c
+ * stm32_dma3_lli_pool_create(): no memory-region => fallback dma_pool in DDR.
+ */
 
 &hpdma2 {
 	memory-region = <&hpdma2_lli>;
 };
 
 &hpdma3 {
-	memory-region = <&hpdma3_lli>;
+	status = "disabled";
 };
 
 &i2c2 {
@@ -436,7 +447,7 @@
 		clock-names = "cec";
 		interrupt-parent = <&gpiod>;
 		interrupts = <10 IRQ_TYPE_EDGE_FALLING>;
-		status = "disabled";
+		status = "okay";
 		adi,dsi-lanes = <4>;
 		reset-gpios = <&gpiog 14 GPIO_ACTIVE_LOW>;
 		avdd-supply = <&scmi_v1v8>;
@@ -500,7 +511,7 @@
 	dmas = <&hpdma 51 0x43 0x12>,
 	       <&hpdma 52 0x43 0x21>;
 	dma-names = "rx", "tx";
-	status = "disabled";
+	status = "okay";
 
 	i2s2_port: port {
 		i2s2_endpoint: endpoint {
@@ -591,7 +602,6 @@
 	nvmem-cells = <&rsc_tbl_addr_m33td>, <&rsc_tbl_size_m33td>;
 	memory-region = <&ipc_shmem_1>, <&vdev0vring0>,
 			<&vdev0vring1>, <&vdev0buffer>;
-	keep-power-in-suspend;
 	st,auto-boot;
 	status = "okay";
 	};

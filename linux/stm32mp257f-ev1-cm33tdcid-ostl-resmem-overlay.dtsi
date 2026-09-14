@@ -28,12 +28,7 @@
 		};
 
 		hpdma2_lli: hpdma2-lli@a030000 {
-			reg = <0x0 0xa030000 0x0 0xe000>;
-			no-map;
-		};
-
-		hpdma3_lli: hpdma3-lli@a03e000 {
-			reg = <0x0 0xa03e000 0x0 0x2000>;
+			reg = <0x0 0xa030000 0x0 0x10000>;
 			no-map;
 		};
 
@@ -86,12 +81,12 @@
 
 		/* Backup RAM reserved memory declaration */
 		bl31_lowpower: bl31-lowpower@42000000 {
-			reg = <0x0 0x42000000 0x0 0x1000>;
+			reg = <0x0 0x42000000 0x0 0x1400>;
 			no-map;
 		};
 
-		tfm_its: tfm-its@42001000 {
-			reg = <0x0 0x42001000 0x0 0x1000>;
+		tfm_its: tfm-its@42001400 {
+			reg = <0x0 0x42001400 0x0 0xC00>;
 			no-map;
 		};
 
